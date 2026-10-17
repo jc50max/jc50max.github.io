@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pain Dur</title>
+<meta name="description" content="Levain, température et durée de pointage pour le pain au levain.">
+<meta name="theme-color" content="#1E2A30">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+:root{
+  --bg:#E7ECEE; --surface:#F6F8F9; --ink:#1E2A30; --muted:#56656C;
+  --crust:#8A4B12; --line:#C9D2D6; --warn:#9A2E1F; --onCrust:#FFFFFF;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#141B1F; --surface:#1C252A; --ink:#E4E9EB; --muted:#9AA8AE;
+    --crust:#E0A256; --line:#2E3A40; --warn:#F08C76; --onCrust:#141B1F;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+main{max-width:34rem;margin:0 auto;padding:1.25rem 1.1rem 3rem}
+h1{font:600 1.15rem/1.2 system-ui,sans-serif;margin:0;letter-spacing:.01em}
+.lede{margin:.15rem 0 1.1rem;color:var(--muted);font-size:.92rem}
+.switch{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--ink);border-radius:.6rem;overflow:hidden;margin-bottom:1rem}
+.switch button{appearance:none;border:0;background:transparent;color:var(--ink);font:500 .95rem system-ui,sans-serif;padding:.7rem .4rem;cursor:pointer}
+.switch button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem .8rem}
+.grid .wide{grid-column:1/-1}
+label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:.25rem}
+input,textarea{width:100%;font:500 1.15rem system-ui,sans-serif;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line);border-radius:.45rem;padding:.55rem .6rem;font-variant-numeric:tabular-nums}
+textarea{font-size:1rem;min-height:2.6rem;resize:vertical}
+input:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:2.5px solid var(--crust);outline-offset:2px}
+.readout{margin:1.4rem 0 .4rem;padding:1.1rem 0 1rem;border-top:1.5px solid var(--ink);border-bottom:1px solid var(--line)}
+.big{font:400 clamp(3.2rem,17vw,4.8rem)/1 "Noto Serif","Iowan Old Style",Georgia,serif;font-variant-numeric:lining-nums tabular-nums;
+  letter-spacing:-.02em;margin:0}
+.big small{font-size:.42em;letter-spacing:0;color:var(--muted);margin:0 .12em 0 .06em}
+.what{margin:.1rem 0 0;font-size:.95rem}
+.when{margin:.35rem 0 0;color:var(--crust);font-weight:600}
+.msg{margin:.6rem 0 0;font-size:.88rem;color:var(--warn)}
+.msg:empty{display:none}
+.recipe{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin:1rem 0 .3rem;text-align:left}
+.recipe div{font-size:.8rem;color:var(--muted)}
+.recipe b{display:block;font:500 1.15rem system-ui,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums}
+figure{margin:1.4rem 0 0}
+figcaption{font-size:.82rem;color:var(--muted);margin-top:.3rem}
+svg text{font:11px system-ui,sans-serif;fill:var(--muted)}
+details{margin-top:1.1rem;border-top:1px solid var(--line);padding-top:.7rem}
+summary{font-weight:600;cursor:pointer;padding:.25rem 0;list-style-position:outside}
+details .inner{padding-top:.6rem}
+.btn{appearance:none;border:1.5px solid var(--crust);background:var(--crust);color:var(--onCrust);border-radius:.45rem;
+  font:600 .95rem system-ui,sans-serif;padding:.65rem .9rem;cursor:pointer;margin:.7rem .4rem 0 0}
+.btn.ghost{background:transparent;color:var(--crust)}
+table{width:100%;border-collapse:collapse;margin-top:.8rem;font-size:.86rem;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:.35rem .25rem;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:500;color:var(--muted)}
+td button{appearance:none;border:0;background:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:.1rem .3rem}
+.note{font-size:.85rem;color:var(--muted);margin:.5rem 0 0}
+.k{font-weight:600;color:var(--ink)}
+@media (prefers-reduced-motion:no-preference){.big{transition:opacity .15s}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Pain Dur</h1>
+  <p class="lede">Levain, température de pâte, durée de pointage.</p>
+
+  <div class="switch" role="tablist" aria-label="Type de calcul">
+    <button role="tab" id="tabFwd" aria-selected="true">J'ai mon levain</button>
+    <button role="tab" id="tabInv" aria-selected="false">J'ai un délai</button>
+  </div>
+
+  <div class="grid">
+    <div><label for="flour">Farine (g)</label><input id="flour" inputmode="decimal" value="1000"></div>
+    <div><label for="temp">Température pâte (°C)</label><input id="temp" inputmode="decimal" value="18"></div>
+    <div id="boxStarter"><label for="starter">Levain (g)</label><input id="starter" inputmode="decimal" value="200"></div>
+    <div id="boxHours" hidden><label for="hours">Délai disponible (h)</label><input id="hours" inputmode="decimal" value="10"></div>
+  </div>
+
+  <section class="readout" aria-live="polite">
+    <p class="big" id="big">–</p>
+    <p class="what" id="what"></p>
+    <p class="when" id="when"></p>
+    <p class="msg" id="msg"></p>
+    <div class="recipe" id="recipe"></div>
+  </section>
+
+  <figure>
+    <svg id="curve" viewBox="0 0 320 150" width="100%" role="img" aria-label="Durée de pointage selon la température"></svg>
+    <figcaption id="curveCap">Durée de pointage selon la température, au taux de levain saisi.</figcaption>
+  </figure>
+
+  <details id="journal">
+    <summary>Journal des fournées</summary>
+    <div class="inner">
+      <div class="grid">
+        <div><label for="realH">Durée réelle (h)</label><input id="realH" inputmode="decimal" placeholder="7,5"></div>
+        <div class="wide"><label for="comment">Commentaire</label><textarea id="comment" rows="1" placeholder="Farine T80, levain à 4 h du rafraîchi…"></textarea></div>
+      </div>
+      <button class="btn" id="addBatch">Enregistrer la fournée</button>
+      <p class="note">La fournée enregistrée reprend farine, levain et température du calcul affiché.</p>
+      <table id="tbl" hidden>
+        <thead><tr><th>Date</th><th>Lev. %</th><th>°C</th><th>Réel</th><th>Modèle</th><th>Écart</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="note" id="calib"></p>
+      <button class="btn" id="applyK" hidden>Appliquer le recalage</button>
+      <button class="btn ghost" id="exportCsv" hidden>Exporter en CSV</button>
+    </div>
+  </details>
+
+  <details>
+    <summary>Réglages</summary>
+    <div class="inner grid" id="settings"></div>
+    <button class="btn ghost" id="reset">Revenir aux valeurs d'origine</button>
+    <p class="note">Modèle : vitesse levure et bactérie μ ∝ (Tmax − T)<sup>b</sup>·e<sup>−c·(Tmax − T)</sup>, combinées en moyenne géométrique pondérée, normalisées sur la fournée de référence. Durée inversement proportionnelle au taux de levain.</p>
+  </details>
+</main>
+
+<script>
+"use strict";
+const DEF={waterPerKg:625,saltPerKg:20,starterHydr:100,
+  refFlour:1000,refStarter:200,refTemp:21.5,refHours:7.25,yeastShare:0.7,
+  yTmax:35.9,yB:3,yC:0.34,bTmax:41,bB:2,bC:0.22,k:1};
+const LABELS=[
+  ["waterPerKg","Eau pour 1 kg de farine (g)"],["saltPerKg","Sel pour 1 kg de farine (g)"],
+  ["starterHydr","Hydratation du levain (%)"],["k","Facteur de recalage"],
+  ["refFlour","Référence : farine (g)"],["refStarter","Référence : levain (g)"],
+  ["refTemp","Référence : température (°C)"],["refHours","Référence : durée (h)"],
+  ["yeastShare","Part levure (0–1)"],["yTmax","Levure : Tmax (°C)"],["yB","Levure : b"],["yC","Levure : c"],
+  ["bTmax","Bactérie : Tmax (°C)"],["bB","Bactérie : b"],["bC","Bactérie : c"]];
+
+// Stockage : localStorage sur le site déployé, mémoire seule si indisponible.
+const mem={};
+const store={get(k,d){try{const v=localStorage.getItem("pd:"+k);return v?JSON.parse(v):d}catch(e){return k in mem?mem[k]:d}},
+  set(k,v){try{localStorage.setItem("pd:"+k,JSON.stringify(v))}catch(e){mem[k]=v}}};
+
+let P=Object.assign({},DEF,store.get("params",{}));
+let batches=store.get("batches",[]);
+let mode=store.get("mode","fwd");
+let curStarter=NaN; // levain du calcul en cours (saisi ou calculé)
+const $=id=>document.getElementById(id);
+const num=s=>{const v=parseFloat(String(s).replace(",",".").trim());return isFinite(v)?v:NaN};
+const fr=(v,d=0)=>v.toLocaleString("fr-FR",{minimumFractionDigits:d,maximumFractionDigits:d});
+
+function grow(T,Tmax,b,c){const x=Tmax-T;return Math.pow(x,b)*Math.exp(-c*x)}
+function rate(T){
+  const y=grow(T,P.yTmax,P.yB,P.yC)/grow(P.refTemp,P.yTmax,P.yB,P.yC);
+  const b=grow(T,P.bTmax,P.bB,P.bC)/grow(P.refTemp,P.bTmax,P.bB,P.bC);
+  return Math.pow(y,P.yeastShare)*Math.pow(b,1-P.yeastShare);
+}
+const refRatio=()=>P.refStarter/P.refFlour;
+// Durée (h) pour un taux levain/farine donné
+function hoursFor(ratio,T){return P.k*P.refHours*(refRatio()/ratio)/rate(T)}
+// Levain (g) pour une farine et une durée données
+function starterFor(flour,hours,T){return flour*refRatio()*P.k*P.refHours/hours/rate(T)}
+
+function hm(h){let H=Math.floor(h),M=Math.round((h-H)*60);if(M===60){H++;M=0}return{H,M}}
+function bigTime(h){const {H,M}=hm(h);return `${H}<small>h</small>${String(M).padStart(2,"0")}`}
+
+function validate(T,ratio){
+  const tmax=Math.min(P.yTmax,P.bTmax);
+  if(!(T>0)||T>=tmax-1)return{err:`Température hors modèle : elle doit rester sous ${fr(tmax-1,1)} °C.`};
+  const w=[];
+  if(T<15||T>20)w.push("Hors plage calibrée 15–20 °C : estimation indicative.");
+  if(ratio!==undefined&&(ratio<0.05||ratio>0.4))w.push("Taux de levain hors 5–40 % : la proportionnalité inverse devient fragile.");
+  return{warn:w.join(" ")};
+}
+
+function compute(){
+  const f=num($("flour").value),T=num($("temp").value);
+  let st,h,msg="";
+  if(!(f>0)||!(T>0)){show(null,"Saisis une farine et une température positives.");return}
+  if(mode==="fwd"){
+    st=num($("starter").value);
+    if(!(st>0)){show(null,"Saisis une quantité de levain positive.");return}
+    const v=validate(T,st/f);if(v.err){show(null,v.err);return}
+    h=hoursFor(st/f,T);msg=v.warn;
+    $("big").innerHTML=bigTime(h);
+    $("what").textContent=`de pointage à ${fr(T,1)} °C avec ${fr(st)} g de levain (${fr(st/f*100,1)} %).`;
+  }else{
+    h=num($("hours").value);
+    if(!(h>0)){show(null,"Saisis un délai positif.");return}
+    st=starterFor(f,h,T);
+    const v=validate(T,st/f);if(v.err){show(null,v.err);return}
+    msg=v.warn;
+    $("big").innerHTML=`${fr(st)}<small>g</small>`;
+    $("what").textContent=`de levain (${fr(st/f*100,1)} %) pour ${fr(h,1).replace(",0","")} h à ${fr(T,1)} °C.`;
+  }
+  const end=new Date(Date.now()+h*3600e3);
+  $("when").textContent=`Pâte prête vers ${end.getHours()} h ${String(end.getMinutes()).padStart(2,"0")} si tu pétris maintenant.`;
+  $("msg").textContent=msg;
+  curStarter=st;recipe(f,st);curve(st/f,T);
+  store.set("inputs",{flour:$("flour").value,temp:$("temp").value,starter:$("starter").value,hours:$("hours").value});
+}
+function show(_,err){curStarter=NaN;$("big").textContent="–";$("what").textContent="";$("when").textContent="";$("msg").textContent=err;$("recipe").innerHTML=""}
+
+function recipe(f,st){
+  const water=f*P.waterPerKg/1000,salt=f*P.saltPerKg/1000;
+  const sw=st*P.starterHydr/(100+P.starterHydr),sf=st-sw;
+  const hyd=(water+sw)/(f+sf)*100;
+  $("recipe").innerHTML=
+    `<div><b>${fr(f)} g</b>farine</div><div><b>${fr(water)} g</b>eau</div>`+
+    `<div><b>${fr(salt,1)} g</b>sel</div><div><b>${fr(hyd,0)} %</b>hydratation réelle</div>`;
+}
+
+function curve(ratio,Tnow){
+  const svg=$("curve"),W=320,H=150,L=34,R=10,Tp=12,B=26,t0=14,t1=26;
+  const pts=[];for(let T=t0;T<=t1+1e-9;T+=0.25)pts.push([T,hoursFor(ratio,T)]);
+  const hMax=Math.ceil(Math.max(...pts.map(p=>p[1]))/4)*4;
+  const x=T=>L+(T-t0)/(t1-t0)*(W-L-R),y=h=>Tp+(1-h/hMax)*(H-Tp-B);
+  let g="";
+  for(let h=0;h<=hMax;h+=hMax/4)g+=`<line x1="${L}" x2="${W-R}" y1="${y(h)}" y2="${y(h)}" stroke="var(--line)"/><text x="${L-6}" y="${y(h)+4}" text-anchor="end">${fr(h)} h</text>`;
+  for(let T=t0;T<=t1;T+=2)g+=`<text x="${x(T)}" y="${H-8}" text-anchor="middle">${T}°</text>`;
+  g+=`<rect x="${x(15)}" y="${Tp}" width="${x(20)-x(15)}" height="${H-Tp-B}" fill="var(--crust)" opacity=".09"/>`;
+  g+=`<polyline fill="none" stroke="var(--ink)" stroke-width="2" points="${pts.map(p=>x(p[0]).toFixed(1)+","+y(p[1]).toFixed(1)).join(" ")}"/>`;
+  if(Tnow>=t0&&Tnow<=t1){const hn=hoursFor(ratio,Tnow);g+=`<circle cx="${x(Tnow)}" cy="${y(hn)}" r="5" fill="var(--crust)"/>`}
+  svg.innerHTML=g;
+  $("curveCap").textContent=`Durée de pointage selon la température, à ${fr(ratio*100,1)} % de levain. Zone teintée : plage calibrée 15–20 °C.`;
+}
+
+// Journal
+function renderBatches(){
+  const tb=$("tbl").querySelector("tbody");tb.innerHTML="";
+  batches.forEach((b,i)=>{
+    const m=hoursFor(b.starter/b.flour,b.temp);
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${b.date}</td><td>${fr(b.starter/b.flour*100,0)}</td><td>${fr(b.temp,1)}</td><td>${fr(b.real,1)}</td><td>${fr(m,1)}</td><td>${(b.real-m>=0?"+":"")+fr(b.real-m,1)}</td><td><button aria-label="Supprimer la fournée du ${b.date}" data-i="${i}">×</button></td>`;
+    tb.appendChild(tr);
+  });
+  const has=batches.length>0;$("tbl").hidden=!has;$("exportCsv").hidden=!has;
+  if(batches.length>=2){
+    // facteur multiplicatif : moyenne géométrique réel/modèle, appliqué au k courant
+    const lg=batches.reduce((s,b)=>s+Math.log(b.real/hoursFor(b.starter/b.flour,b.temp)),0)/batches.length;
+    const kNew=P.k*Math.exp(lg);
+    $("calib").innerHTML=`Sur ${batches.length} fournées, le recalage passerait le facteur de <span class="k">${fr(P.k,3)}</span> à <span class="k">${fr(kNew,3)}</span>.`;
+    $("applyK").hidden=Math.abs(kNew-P.k)<0.005;$("applyK").dataset.k=kNew;
+  }else{$("calib").textContent=has?"Une deuxième fournée permettra de proposer un recalage.":"";$("applyK").hidden=true}
+}
+$("addBatch").onclick=()=>{
+  const f=num($("flour").value),st=Math.round(curStarter),T=num($("temp").value),r=num($("realH").value);
+  if(!(f>0&&st>0&&T>0&&r>0)){$("calib").textContent="Pour enregistrer : farine, levain, température et durée réelle positifs.";return}
+  if(validate(T).err){$("calib").textContent=validate(T).err;return}
+  batches.push({date:new Date().toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"2-digit"}),flour:f,starter:st,temp:T,real:r,comment:$("comment").value.trim()});
+  store.set("batches",batches);$("realH").value="";$("comment").value="";renderBatches();
+};
+$("tbl").onclick=e=>{const i=e.target.dataset.i;if(i===undefined)return;batches.splice(+i,1);store.set("batches",batches);renderBatches()};
+$("applyK").onclick=()=>{P.k=+(+$("applyK").dataset.k).toFixed(3);store.set("params",P);buildSettings();renderBatches();compute()};
+$("exportCsv").onclick=()=>{
+  const rows=[["Date","Farine (g)","Levain (g)","Temp. pâte (°C)","Temps réel (h)","Commentaires","Temps modèle (h)","Écart (h)"]];
+  batches.forEach(b=>{const m=hoursFor(b.starter/b.flour,b.temp);rows.push([b.date,b.flour,b.starter,b.temp,b.real,b.comment,m.toFixed(2),(b.real-m).toFixed(2)])});
+  const csv="\uFEFF"+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(";")).join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="fournees-pain-dur.csv";a.click();
+};
+
+// Réglages
+function buildSettings(){
+  $("settings").innerHTML=LABELS.map(([k,l])=>`<div><label for="s_${k}">${l}</label><input id="s_${k}" data-k="${k}" inputmode="decimal" value="${String(P[k]).replace(".",",")}"></div>`).join("");
+}
+$("settings").addEventListener("input",e=>{const k=e.target.dataset.k,v=num(e.target.value);if(k&&isFinite(v)){P[k]=v;store.set("params",P);compute();renderBatches()}});
+$("reset").onclick=()=>{P=Object.assign({},DEF);store.set("params",P);buildSettings();compute();renderBatches()};
+
+// Mode
+function setMode(m){mode=m;store.set("mode",m);
+  $("tabFwd").setAttribute("aria-selected",m==="fwd");$("tabInv").setAttribute("aria-selected",m==="inv");
+  $("boxStarter").hidden=m!=="fwd";$("boxHours").hidden=m!=="inv";compute()}
+$("tabFwd").onclick=()=>setMode("fwd");$("tabInv").onclick=()=>setMode("inv");
+["flour","temp","starter","hours"].forEach(id=>$(id).addEventListener("input",compute));
+
+const last=store.get("inputs",null);if(last)for(const k in last)if($(k))$(k).value=last[k];
+buildSettings();renderBatches();setMode(mode);
+
+if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>
