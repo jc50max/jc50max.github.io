@@ -1,0 +1,64 @@
+name: 1 - Publier le site
+
+on:
+  push:
+    branches: [main]
+    paths: ['web/**', '.github/workflows/deploy-pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.dep.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Préparer le site
+        run: |
+          mkdir -p _site/.well-known
+          cp -r web/. _site/
+          touch _site/.nojekyll
+
+      - name: Générer assetlinks.json depuis la clé
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::notice::Pas encore de clé : site publié sans assetlinks.json (normal avant l'étape 4)."
+            exit 0
+          fi
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/k.jks"
+          FP=$(keytool -list -v -keystore "$RUNNER_TEMP/k.jks" -alias "$KEY_ALIAS" \
+                 -storepass "$KEYSTORE_PASSWORD" | awk '/SHA256:/{print $2; exit}')
+          cat > _site/.well-known/assetlinks.json <<JSON
+          [{"relation":["delegate_permission/common.handle_all_urls"],
+            "target":{"namespace":"android_app","package_name":"com.paindur.app",
+                      "sha256_cert_fingerprints":["$FP"]}}]
+          JSON
+          echo "Empreinte publiée : $FP" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/configure-pages@v5
+      # v3 conserve le dossier caché .well-known (v4 l'exclut)
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: dep
+        uses: actions/deploy-pages@v4
